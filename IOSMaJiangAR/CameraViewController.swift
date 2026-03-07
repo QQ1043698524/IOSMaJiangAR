@@ -21,6 +21,7 @@ final class CameraViewController: UIViewController {
     private let ruleButton = UIButton(type: .system)
     private let recognizeButton = UIButton(type: .system)
     private let torchButton = UIButton(type: .system)
+    private let addButton = UIButton(type: .system)
 
     private var handTiles: [MahjongTile] = []
     private var latestDetections: [MahjongDetection] = []
@@ -166,7 +167,10 @@ final class CameraViewController: UIViewController {
         actionStack.axis = .vertical
         actionStack.spacing = 8
         actionStack.alignment = .fill
-        [clearButton, ruleButton, recognizeButton, torchButton].forEach { actionStack.addArrangedSubview($0) }
+        // 注意：这里移除了 viewDidLoad 中的重复添加，因为 addButton 已经在 configureActionButtons 后统一添加
+        // 但由于 SearchReplace 上一步操作可能导致结构错乱，这里重新整理整个 setupUI 尾部
+        
+        [clearButton, ruleButton, recognizeButton, torchButton, addButton].forEach { actionStack.addArrangedSubview($0) }
 
         view.addSubview(topBar)
         view.addSubview(resultLabel)
@@ -204,6 +208,34 @@ final class CameraViewController: UIViewController {
         configure(button: ruleButton, title: "规则:国标", action: #selector(switchRule))
         configure(button: recognizeButton, title: "识别:开", action: #selector(toggleRecognition))
         configure(button: torchButton, title: "闪光灯:关", action: #selector(toggleTorch))
+        configure(button: addButton, title: "添加识别", action: #selector(addDetectedTiles))
+    }
+    
+    // 移除之前的 viewDidLoad 中错误的插入，保持代码整洁
+    // ... (no changes needed, just cleaning up context)
+
+    @objc private func addDetectedTiles() {
+        // 将当前检测到的所有麻将牌添加到手牌
+        let newTiles = latestDetections.compactMap { $0.tile }
+        
+        guard !newTiles.isEmpty else {
+            // 提示无识别结果
+            let feedback = UINotificationFeedbackGenerator()
+            feedback.notificationOccurred(.warning)
+            return 
+        }
+
+        // 避免重复添加完全相同的一组牌（简单防抖）
+        // 这里只是简单追加，用户可以手动删除多余的
+        for tile in newTiles {
+            if handTiles.count < 14 {
+                handTiles.append(tile)
+            }
+        }
+        refreshHandAndResult()
+        
+        let feedback = UINotificationFeedbackGenerator()
+        feedback.notificationOccurred(.success)
     }
 
     private func configure(button: UIButton, title: String, action: Selector) {
