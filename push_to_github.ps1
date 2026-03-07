@@ -4,35 +4,35 @@ function Test-Command($command) {
     return (Get-Command $command -ErrorAction SilentlyContinue) -ne $null
 }
 
-Write-Host "正在检查 Git 环境..." -ForegroundColor Cyan
+Write-Host "Checking Git environment..." -ForegroundColor Cyan
 
 if (-not (Test-Command "git")) {
-    Write-Host "错误: 未找到 git 命令。请先安装 Git for Windows (https://git-scm.com/download/win) 并确保添加到 PATH。" -ForegroundColor Red
+    Write-Host "Error: Git command not found. Please install Git for Windows." -ForegroundColor Red
     Pause
     exit 1
 }
 
 $gitVersion = git --version
-Write-Host "Git 已就绪: $gitVersion" -ForegroundColor Green
+Write-Host "Git is ready: $gitVersion" -ForegroundColor Green
 
-# 代理配置
-$proxyPort = Read-Host "请输入代理端口 (例如 7890，直接回车跳过代理设置)"
+# Proxy settings
+$proxyPort = Read-Host "Enter proxy port (e.g., 7890, press Enter to skip)"
 if ($proxyPort -match "^\d+$") {
     $proxyUrl = "http://127.0.0.1:$proxyPort"
-    Write-Host "正在设置 Git 代理为 $proxyUrl ..." -ForegroundColor Yellow
+    Write-Host "Setting Git proxy to $proxyUrl ..." -ForegroundColor Yellow
     git config --global http.proxy $proxyUrl
     git config --global https.proxy $proxyUrl
 } else {
-    Write-Host "跳过代理设置。" -ForegroundColor Gray
+    Write-Host "Skipping proxy setup." -ForegroundColor Gray
 }
 
-# 初始化仓库
+# Init repo
 if (-not (Test-Path ".git")) {
-    Write-Host "初始化 Git 仓库..."
+    Write-Host "Initializing Git repository..."
     git init
 }
 
-# 配置提交信息（如果未配置）
+# Config user (if needed)
 try {
     git config user.name
 } catch {
@@ -40,50 +40,50 @@ try {
     git config user.email "ai@assistant.com"
 }
 
-# 添加文件
-Write-Host "添加文件..."
+# Add files
+Write-Host "Adding files..."
 git add .
 
-# 提交
+# Commit
 $status = git status --porcelain
 if ($status) {
-    Write-Host "提交更改..."
+    Write-Host "Committing changes..."
     git commit -m "Initial commit of iOS MaJiang AR project"
 } else {
-    Write-Host "没有需要提交的更改。"
+    Write-Host "No changes to commit."
 }
 
-# 关联远程
+# Remote
 $remoteUrl = "https://github.com/QQ1043698524/IOSMaJiangAR.git"
 $remotes = git remote
 if ($remotes -contains "origin") {
-    Write-Host "远程仓库 origin 已存在，正在更新 URL..."
+    Write-Host "Updating origin URL..."
     git remote set-url origin $remoteUrl
 } else {
-    Write-Host "添加远程仓库 origin..."
+    Write-Host "Adding remote origin..."
     git remote add origin $remoteUrl
 }
 
-# 推送
-Write-Host "准备推送代码到 GitHub..." -ForegroundColor Cyan
-Write-Host "注意: 接下来的步骤可能需要您在弹出的窗口中输入 GitHub 账号密码或 Token。" -ForegroundColor Yellow
+# Push
+Write-Host "Pushing code to GitHub..." -ForegroundColor Cyan
+Write-Host "Note: You may need to enter your GitHub credentials in the popup window." -ForegroundColor Yellow
 git branch -M main
 try {
     git push -u origin main
-    Write-Host "推送成功！" -ForegroundColor Green
-    Write-Host "现在您可以访问 https://github.com/QQ1043698524/IOSMaJiangAR/actions 查看编译进度。" -ForegroundColor Cyan
+    Write-Host "Push SUCCESS!" -ForegroundColor Green
+    Write-Host "Visit https://github.com/QQ1043698524/IOSMaJiangAR/actions to see build progress." -ForegroundColor Cyan
 } catch {
-    Write-Host "推送失败。请检查网络连接或权限设置。" -ForegroundColor Red
+    Write-Host "Push FAILED. Please check your network or credentials." -ForegroundColor Red
     Write-Error $_
 }
 
-# 清理代理（可选，避免影响其他操作）
+# Cleanup proxy
 if ($proxyPort -match "^\d+$") {
-    $cleanup = Read-Host "是否清除 Git 全局代理设置? (Y/n)"
+    $cleanup = Read-Host "Remove Git global proxy settings? (Y/n)"
     if ($cleanup -ne "n") {
         git config --global --unset http.proxy
         git config --global --unset https.proxy
-        Write-Host "Git 代理已清除。"
+        Write-Host "Git proxy settings removed."
     }
 }
 
