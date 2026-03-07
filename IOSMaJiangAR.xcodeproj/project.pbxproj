@@ -18,7 +18,7 @@
 		4B4D00010000000100000009 /* ResultLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D00010000000000000009 /* ResultLabel.swift */; };
 		4B4D0001000000010000000A /* ImagePreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000A /* ImagePreprocessor.swift */; };
 		4B4D0001000000010000000B /* BoundingBoxRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000B /* BoundingBoxRenderer.swift */; };
-		4B4D0001000000010000000C /* MahjongYOLOv8n.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000E /* MahjongYOLOv8n.mlpackage */; };
+		4B4D0001000000010000000D /* MahjongYOLOv8n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000F /* MahjongYOLOv8n.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +36,7 @@
 		4B4D0001000000000000000C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B4D0001000000000000000D /* IOSMaJiangAR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = IOSMaJiangAR.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B4D0001000000000000000E /* MahjongYOLOv8n.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlpackage; path = MahjongYOLOv8n.mlpackage; sourceTree = "<group>"; };
+		4B4D0001000000000000000F /* MahjongYOLOv8n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MahjongYOLOv8n.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +75,7 @@
 				4B4D0001000000000000000B /* BoundingBoxRenderer.swift */,
 				4B4D0001000000000000000C /* Info.plist */,
 				4B4D0001000000000000000E /* MahjongYOLOv8n.mlpackage */,
+				4B4D0001000000000000000F /* MahjongYOLOv8n.swift */,
 			);
 			path = IOSMaJiangAR;
 			sourceTree = "<group>";
@@ -164,6 +166,7 @@
 				4B4D00010000000100000009 /* ResultLabel.swift in Sources */,
 				4B4D0001000000010000000A /* ImagePreprocessor.swift in Sources */,
 				4B4D0001000000010000000B /* BoundingBoxRenderer.swift in Sources */,
+				4B4D0001000000010000000D /* MahjongYOLOv8n.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
