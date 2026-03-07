@@ -159,6 +159,7 @@
 				4B4D00010000000100000002 /* SceneDelegate.swift in Sources */,
 				4B4D00010000000100000003 /* CameraViewController.swift in Sources */,
 				4B4D00010000000100000004 /* CameraManager.swift in Sources */,
+				4B4D0001000000010000000D /* MahjongYOLOv8n.swift in Sources */,
 				4B4D00010000000100000005 /* MahjongDetector.swift in Sources */,
 				4B4D00010000000100000006 /* MahjongCalculator.swift in Sources */,
 				4B4D00010000000100000007 /* MahjongTile.swift in Sources */,
@@ -166,7 +167,6 @@
 				4B4D00010000000100000009 /* ResultLabel.swift in Sources */,
 				4B4D0001000000010000000A /* ImagePreprocessor.swift in Sources */,
 				4B4D0001000000010000000B /* BoundingBoxRenderer.swift in Sources */,
-				4B4D0001000000010000000D /* MahjongYOLOv8n.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
