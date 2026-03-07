@@ -30,7 +30,7 @@ final class ImagePreprocessor {
             attrs as CFDictionary,
             &outBuffer
         )
-        guard let outBuffer else { return nil }
+        guard let outBuffer = outBuffer else { return nil }
         context.render(transformed, to: outBuffer)
         return outBuffer
     }

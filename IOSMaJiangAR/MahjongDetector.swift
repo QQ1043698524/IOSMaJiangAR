@@ -35,7 +35,7 @@ final class MahjongDetector {
         }
         isBusy = true
         processingQueue.async { [weak self] in
-            guard let self else { return }
+            guard let self = self else { return }
             let request = VNCoreMLRequest(model: self.model) { request, _ in
                 defer { self.isBusy = false }
                 let observations = request.results as? [VNRecognizedObjectObservation] ?? []
