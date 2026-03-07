@@ -1,0 +1,39 @@
+name: iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app
+
+      - name: Resolve package dependencies
+        run: xcodebuild -resolvePackageDependencies -project IOSMaJiangAR.xcodeproj
+
+      - name: Build for generic iOS device
+        run: xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+
+      - name: Archive unsigned app
+        run: xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -archivePath ${{ github.workspace }}/build/IOSMaJiangAR.xcarchive archive
+
+      - name: Pack IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/IOSMaJiangAR.xcarchive/Products/Applications/IOSMaJiangAR.app Payload/
+          /usr/bin/zip -r IOSMaJiangAR-unsigned.ipa Payload
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: IOSMaJiangAR-unsigned
+          path: |
+            IOSMaJiangAR-unsigned.ipa
+            build/IOSMaJiangAR.xcarchive
