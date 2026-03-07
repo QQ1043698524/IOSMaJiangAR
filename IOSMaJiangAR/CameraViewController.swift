@@ -54,6 +54,11 @@ final class CameraViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         cameraManager.previewLayer.frame = view.bounds
+        cameraManager.previewLayer.connection?.videoOrientation = .landscapeRight
+        cameraManager.previewLayer.connection?.automaticallyAdjustsVideoMirroring = false
+        if cameraManager.previewLayer.connection?.isVideoMirroringSupported == true {
+            cameraManager.previewLayer.connection?.isVideoMirrored = false
+        }
         overlayView.frame = view.bounds
         
         // 扫描区域：屏幕底部 20% ~ 50% 区域，高度约 30%
@@ -134,7 +139,7 @@ final class CameraViewController: UIViewController {
 
         topBarLabel.text = "麻将实时识别"
         topBarLabel.textColor = .white
-        topBarLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+        topBarLabel.font = .systemFont(ofSize: 14, weight: .semibold)
         topBarLabel.textAlignment = .center
         
         topBar.layer.cornerRadius = 12
@@ -151,7 +156,7 @@ final class CameraViewController: UIViewController {
 
         configureActionButtons()
         actionStack.axis = .vertical
-        actionStack.spacing = 12
+        actionStack.spacing = 8
         actionStack.alignment = .fill
         [clearButton, ruleButton, recognizeButton, torchButton].forEach { actionStack.addArrangedSubview($0) }
 
@@ -164,24 +169,24 @@ final class CameraViewController: UIViewController {
 
         // 横屏布局：手牌在底部，按钮在右侧，结果在左上，TopBar在顶中
         NSLayoutConstraint.activate([
-            topBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            topBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
             topBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            topBar.widthAnchor.constraint(equalToConstant: 200),
-            topBar.heightAnchor.constraint(equalToConstant: 36),
+            topBar.widthAnchor.constraint(equalToConstant: 160),
+            topBar.heightAnchor.constraint(equalToConstant: 30),
 
-            resultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            resultLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-            resultLabel.widthAnchor.constraint(equalToConstant: 240),
-            resultLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 66),
+            resultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
+            resultLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 10),
+            resultLabel.widthAnchor.constraint(equalToConstant: 190),
+            resultLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
 
-            actionStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            actionStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10),
             actionStack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            actionStack.widthAnchor.constraint(equalToConstant: 80),
+            actionStack.widthAnchor.constraint(equalToConstant: 66),
 
             handView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            handView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
-            handView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7),
-            handView.heightAnchor.constraint(equalToConstant: 72)
+            handView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -6),
+            handView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.62),
+            handView.heightAnchor.constraint(equalToConstant: 60)
         ])
         refreshHandAndResult()
     }
@@ -197,9 +202,9 @@ final class CameraViewController: UIViewController {
         button.setTitle(title, for: .normal)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = UIColor.black.withAlphaComponent(0.45)
-        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
-        button.layer.cornerRadius = 9
-        button.heightAnchor.constraint(equalToConstant: 42).isActive = true
+        button.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
+        button.layer.cornerRadius = 7
+        button.heightAnchor.constraint(equalToConstant: 34).isActive = true
         button.addTarget(self, action: action, for: .touchUpInside)
     }
 

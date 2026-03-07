@@ -14,15 +14,35 @@ final class MahjongDetector {
     private var isBusy = false
 
     init?() {
-        // Use direct model loading to bypass wrapper class dependency issues
         let bundle = Bundle.main
-        guard let url = bundle.url(forResource: "MahjongYOLOv8n", withExtension: "mlmodelc"),
-              let mlModel = try? MLModel(contentsOf: url),
-              let vnModel = try? VNCoreMLModel(for: mlModel) else {
-            print("Error: Could not load MahjongYOLOv8n model")
+        var candidateURLs: [URL] = []
+        if let url = bundle.url(forResource: "MahjongYOLOv8n", withExtension: "mlmodelc") {
+            candidateURLs.append(url)
+        }
+        let compiledURLs = bundle.urls(forResourcesWithExtension: "mlmodelc", subdirectory: nil) ?? []
+        candidateURLs.append(contentsOf: compiledURLs.filter { $0.lastPathComponent.contains("MahjongYOLOv8n") })
+        candidateURLs.append(contentsOf: compiledURLs)
+        if let url = bundle.url(forResource: "MahjongYOLOv8n", withExtension: "mlpackage") {
+            candidateURLs.append(url)
+        }
+
+        var loadedModel: VNCoreMLModel?
+        for url in candidateURLs {
+            if let mlModel = try? MLModel(contentsOf: url),
+               let vnModel = try? VNCoreMLModel(for: mlModel) {
+                loadedModel = vnModel
+                break
+            }
+        }
+
+        guard let model = loadedModel else {
+            let resourceNames = bundle.urls(forResourcesWithExtension: nil, subdirectory: nil)?
+                .map { $0.lastPathComponent }
+                .filter { $0.contains("MahjongYOLOv8n") } ?? []
+            print("Error: Could not load MahjongYOLOv8n model. Found resources: \(resourceNames)")
             return nil
         }
-        self.model = vnModel
+        self.model = model
     }
 
     func detect(

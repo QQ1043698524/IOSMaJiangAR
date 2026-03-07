@@ -55,7 +55,19 @@ final class CameraManager: NSObject {
             throw CameraError.cannotAddOutput
         }
         session.addOutput(output)
-        output.connection(with: .video)?.videoOrientation = .landscapeRight
+        if let outputConnection = output.connection(with: .video) {
+            outputConnection.videoOrientation = .landscapeRight
+            if outputConnection.isVideoMirroringSupported {
+                outputConnection.isVideoMirrored = false
+            }
+        }
+        if let previewConnection = previewLayer.connection {
+            previewConnection.videoOrientation = .landscapeRight
+            previewConnection.automaticallyAdjustsVideoMirroring = false
+            if previewConnection.isVideoMirroringSupported {
+                previewConnection.isVideoMirrored = false
+            }
+        }
         session.commitConfiguration()
     }
 

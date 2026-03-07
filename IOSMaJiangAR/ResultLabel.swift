@@ -4,11 +4,11 @@ final class ResultLabel: UILabel {
     override init(frame: CGRect) {
         super.init(frame: frame)
         textColor = .systemYellow
-        font = .systemFont(ofSize: 24, weight: .bold)
-        numberOfLines = 2
+        font = .systemFont(ofSize: 16, weight: .semibold)
+        numberOfLines = 3
         textAlignment = .left
         backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        layer.cornerRadius = 10
+        layer.cornerRadius = 8
         clipsToBounds = true
     }
 
@@ -17,7 +17,7 @@ final class ResultLabel: UILabel {
     }
 
     override func drawText(in rect: CGRect) {
-        let inset = rect.inset(by: UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12))
+        let inset = rect.inset(by: UIEdgeInsets(top: 6, left: 8, bottom: 6, right: 8))
         super.drawText(in: inset)
     }
 }
