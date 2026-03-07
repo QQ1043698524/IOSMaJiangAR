@@ -5,7 +5,7 @@ final class CameraViewController: UIViewController {
     private let cameraManager = CameraManager()
     private let preprocessor = ImagePreprocessor()
     private let calculator = MahjongCalculator()
-    private let detector: MahjongDetector?
+    private var detector: MahjongDetector?
 
     private let overlayView = BoundingBoxRenderer()
     private let scanAreaView = UIView()
@@ -27,12 +27,6 @@ final class CameraViewController: UIViewController {
     private var currentRule: MahjongRule = .guobiao
 
     init() {
-        do {
-            detector = try MahjongDetector()
-        } catch {
-            print("Error loading detector: \(error)")
-            detector = nil
-        }
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -43,6 +37,13 @@ final class CameraViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
+        
+        do {
+            detector = try MahjongDetector()
+        } catch {
+            print("Failed to init detector: \(error)")
+        }
+        
         cameraManager.delegate = self
         cameraManager.setProcessingFPS(20)
         setupUI()
