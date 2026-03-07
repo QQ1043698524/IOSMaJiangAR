@@ -17,7 +17,8 @@ final class BoundingBoxRenderer: UIView {
             boxLayers.append(shape)
 
             let text = CATextLayer()
-            text.string = "\(detection.tile.displayName) \(Int(detection.confidence * 100))%"
+            let label = detection.tile?.displayName ?? detection.label
+            text.string = "\(label) \(Int(detection.confidence * 100))%"
             text.fontSize = 13
             text.foregroundColor = UIColor.white.cgColor
             text.backgroundColor = UIColor.black.withAlphaComponent(0.5).cgColor

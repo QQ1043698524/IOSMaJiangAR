@@ -3,7 +3,8 @@ import CoreML
 import Vision
 
 struct MahjongDetection {
-    let tile: MahjongTile
+    let tile: MahjongTile?
+    let label: String
     let confidence: Float
     let boundingBox: CGRect
 }
@@ -60,10 +61,11 @@ final class MahjongDetector {
                 defer { self.isBusy = false }
                 let observations = request.results as? [VNRecognizedObjectObservation] ?? []
                 let detections = observations.compactMap { observation -> MahjongDetection? in
-                    guard let top = observation.labels.first,
-                          let tile = MahjongTile.modelLookup[top.identifier] else { return nil }
+                    guard let top = observation.labels.first else { return nil }
+                    let tile = MahjongTile.modelLookup[top.identifier]
                     return MahjongDetection(
                         tile: tile,
+                        label: top.identifier,
                         confidence: top.confidence,
                         boundingBox: observation.boundingBox
                     )

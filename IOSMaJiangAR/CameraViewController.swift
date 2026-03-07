@@ -282,7 +282,7 @@ final class CameraViewController: UIViewController {
             let box = normalizedToViewRect(detection.boundingBox)
             return box.contains(point)
         }
-        if let tile = matched?.tile {
+        if let detection = matched, let tile = detection.tile {
             guard handTiles.count < 14 else { return }
             handTiles.append(tile)
             refreshHandAndResult()
@@ -340,6 +340,12 @@ extension CameraViewController: CameraManagerDelegate {
                 // 2. 面积必须足够大（过滤远处背景牌），例如占扫描区高度的 1/5 以上
                 
                 let scanFrame = self.scanAreaView.frame
+                
+                // 调试模式：显示所有识别结果，不过滤
+                let validDetections = detections
+                
+                // 如果需要恢复过滤，请取消下面注释并修改为:
+                /*
                 let validDetections = detections.filter { detection in
                     let rect = self.normalizedToViewRect(detection.boundingBox)
                     let center = CGPoint(x: rect.midX, y: rect.midY)
@@ -347,11 +353,12 @@ extension CameraViewController: CameraManagerDelegate {
                     // 检查是否在扫描区域内
                     let inArea = scanFrame.contains(center)
                     
-                    // 检查大小（简单阈值：高度 > 扫描区高度的 15%）
-                    let sizeCheck = rect.height > (scanFrame.height * 0.15)
+                    // 检查大小（简单阈值：高度 > 扫描区高度的 10%）
+                    let sizeCheck = rect.height > (scanFrame.height * 0.10)
                     
                     return inArea && sizeCheck
                 }
+                */
                 
                 self.latestDetections = validDetections
                 self.overlayView.render(detections: validDetections)
