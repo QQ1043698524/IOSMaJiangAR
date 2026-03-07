@@ -18,23 +18,21 @@ jobs:
       - name: Resolve package dependencies
         run: xcodebuild -resolvePackageDependencies -project IOSMaJiangAR.xcodeproj
 
-      - name: Build for generic iOS device
+      - name: Build app
         shell: bash
         run: |
           set -o pipefail
-          xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee build.log
-
-      - name: Archive unsigned app
-        shell: bash
-        run: |
-          set -o pipefail
-          xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -archivePath ${{ github.workspace }}/build/IOSMaJiangAR.xcarchive archive 2>&1 | tee archive.log
+          xcodebuild build -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO 2>&1 | tee build.log
 
       - name: Pack IPA
         run: |
           mkdir -p Payload
-          cp -R build/IOSMaJiangAR.xcarchive/Products/Applications/IOSMaJiangAR.app Payload/
+          cp -R build/Build/Products/Release-iphoneos/IOSMaJiangAR.app Payload/
           /usr/bin/zip -r IOSMaJiangAR-unsigned.ipa Payload
+
+      - name: List App Content
+        run: |
+          ls -R Payload/IOSMaJiangAR.app
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

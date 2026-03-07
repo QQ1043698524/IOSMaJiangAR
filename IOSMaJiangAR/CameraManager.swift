@@ -71,6 +71,22 @@ final class CameraManager: NSObject {
         session.commitConfiguration()
     }
 
+    func updateVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
+        if let outputConnection = output.connection(with: .video) {
+            outputConnection.videoOrientation = orientation
+            if outputConnection.isVideoMirroringSupported {
+                outputConnection.isVideoMirrored = false
+            }
+        }
+        if let previewConnection = previewLayer.connection {
+            previewConnection.videoOrientation = orientation
+            previewConnection.automaticallyAdjustsVideoMirroring = false
+            if previewConnection.isVideoMirroringSupported {
+                previewConnection.isVideoMirrored = false
+            }
+        }
+    }
+
     func setProcessingFPS(_ fps: Int) {
         let clipped = min(25, max(15, fps))
         frameInterval = CMTime(value: 1, timescale: CMTimeScale(clipped))

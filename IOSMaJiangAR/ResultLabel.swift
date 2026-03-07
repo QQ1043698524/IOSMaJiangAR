@@ -4,8 +4,8 @@ final class ResultLabel: UILabel {
     override init(frame: CGRect) {
         super.init(frame: frame)
         textColor = .systemYellow
-        font = .systemFont(ofSize: 16, weight: .semibold)
-        numberOfLines = 3
+        font = .systemFont(ofSize: 14, weight: .semibold)
+        numberOfLines = 0
         textAlignment = .left
         backgroundColor = UIColor.black.withAlphaComponent(0.35)
         layer.cornerRadius = 8

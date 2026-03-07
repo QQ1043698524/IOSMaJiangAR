@@ -54,20 +54,28 @@ final class CameraViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         cameraManager.previewLayer.frame = view.bounds
-        cameraManager.previewLayer.connection?.videoOrientation = .landscapeRight
-        cameraManager.previewLayer.connection?.automaticallyAdjustsVideoMirroring = false
-        if cameraManager.previewLayer.connection?.isVideoMirroringSupported == true {
-            cameraManager.previewLayer.connection?.isVideoMirrored = false
-        }
+        cameraManager.updateVideoOrientation(.landscapeRight)
         overlayView.frame = view.bounds
         
-        // 扫描区域：屏幕底部 20% ~ 50% 区域，高度约 30%
-        let scanH = view.bounds.height * 0.3
-        let scanY = view.bounds.height * 0.5
-        scanAreaView.frame = CGRect(x: 16, y: scanY, width: view.bounds.width - 32, height: scanH)
+        // 扫描区域：屏幕底部更紧凑的区域
+        let scanH = view.bounds.height * 0.25
+        let scanY = (view.bounds.height - scanH) / 2 + 20
+        scanAreaView.frame = CGRect(x: 40, y: scanY, width: view.bounds.width - 80, height: scanH)
         scanAreaView.layer.borderColor = UIColor.green.withAlphaComponent(0.6).cgColor
         scanAreaView.layer.borderWidth = 2
         scanAreaView.layer.cornerRadius = 8
+        
+        // 更新渐变层 Frame
+        if let gradientLayer = scanAreaView.layer.sublayers?.first(where: { $0 is CAGradientLayer }) {
+            gradientLayer.frame = scanAreaView.bounds
+            gradientLayer.mask?.frame = scanAreaView.bounds
+            (gradientLayer.mask as? CAShapeLayer)?.path = UIBezierPath(roundedRect: scanAreaView.bounds, cornerRadius: 8).cgPath
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        cameraManager.updateVideoOrientation(.landscapeRight)
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -169,24 +177,24 @@ final class CameraViewController: UIViewController {
 
         // 横屏布局：手牌在底部，按钮在右侧，结果在左上，TopBar在顶中
         NSLayoutConstraint.activate([
-            topBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
+            topBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
             topBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            topBar.widthAnchor.constraint(equalToConstant: 160),
-            topBar.heightAnchor.constraint(equalToConstant: 30),
+            topBar.widthAnchor.constraint(equalToConstant: 120),
+            topBar.heightAnchor.constraint(equalToConstant: 28),
 
-            resultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
-            resultLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 10),
-            resultLabel.widthAnchor.constraint(equalToConstant: 190),
-            resultLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
+            resultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            resultLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 8),
+            resultLabel.widthAnchor.constraint(equalToConstant: 160),
+            resultLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 40),
 
-            actionStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10),
+            actionStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -8),
             actionStack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            actionStack.widthAnchor.constraint(equalToConstant: 66),
+            actionStack.widthAnchor.constraint(equalToConstant: 60),
 
             handView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            handView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -6),
-            handView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.62),
-            handView.heightAnchor.constraint(equalToConstant: 60)
+            handView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -4),
+            handView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7),
+            handView.heightAnchor.constraint(equalToConstant: 50)
         ])
         refreshHandAndResult()
     }
