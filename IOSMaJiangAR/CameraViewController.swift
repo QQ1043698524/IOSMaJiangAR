@@ -123,7 +123,7 @@ final class CameraViewController: UIViewController {
         
         // 呼吸动画 (透明度)
         UIView.animate(withDuration: 1.5, delay: 0, options: [.autoreverse, .repeat, .allowUserInteraction], animations: {
-            scanAreaView.alpha = 0.6
+            self.scanAreaView.alpha = 0.6
         }, completion: nil)
 
         overlayView.backgroundColor = .clear
