@@ -8,6 +8,7 @@ final class CameraViewController: UIViewController {
     private let detector: MahjongDetector?
 
     private let overlayView = BoundingBoxRenderer()
+    private let scanAreaView = UIView()
     private let topBar = UILabel()
     private let resultLabel = ResultLabel()
     private let handView = MahjongHandView()
@@ -46,6 +47,14 @@ final class CameraViewController: UIViewController {
         super.viewDidLayoutSubviews()
         cameraManager.previewLayer.frame = view.bounds
         overlayView.frame = view.bounds
+        
+        // 扫描区域：屏幕底部 20% ~ 50% 区域，高度约 30%
+        let scanH = view.bounds.height * 0.3
+        let scanY = view.bounds.height * 0.5
+        scanAreaView.frame = CGRect(x: 16, y: scanY, width: view.bounds.width - 32, height: scanH)
+        scanAreaView.layer.borderColor = UIColor.green.withAlphaComponent(0.6).cgColor
+        scanAreaView.layer.borderWidth = 2
+        scanAreaView.layer.cornerRadius = 8
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -60,6 +69,23 @@ final class CameraViewController: UIViewController {
 
     private func setupUI() {
         view.layer.addSublayer(cameraManager.previewLayer)
+        
+        // 扫描区提示
+        scanAreaView.backgroundColor = UIColor.clear
+        scanAreaView.isUserInteractionEnabled = false
+        view.addSubview(scanAreaView)
+        
+        let scanLabel = UILabel()
+        scanLabel.text = "请将手牌置于此区域内"
+        scanLabel.textColor = .green
+        scanLabel.font = .systemFont(ofSize: 14)
+        scanLabel.textAlignment = .center
+        scanAreaView.addSubview(scanLabel)
+        scanLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            scanLabel.centerXAnchor.constraint(equalTo: scanAreaView.centerXAnchor),
+            scanLabel.topAnchor.constraint(equalTo: scanAreaView.topAnchor, constant: 8)
+        ])
 
         overlayView.backgroundColor = .clear
         overlayView.isUserInteractionEnabled = true
@@ -233,13 +259,41 @@ final class CameraViewController: UIViewController {
 
 extension CameraViewController: CameraManagerDelegate {
     func cameraManager(_ manager: CameraManager, didOutput sampleBuffer: CMSampleBuffer) {
-        guard isRecognitionEnabled, let detector else { return }
+        guard isRecognitionEnabled else { return }
+        
+        guard let detector = detector else {
+            DispatchQueue.main.async { [weak self] in
+                self?.topBar.text = "模型加载失败，请替换文件"
+                self?.topBar.backgroundColor = UIColor.red.withAlphaComponent(0.6)
+            }
+            return
+        }
+        
         guard let pixelBuffer = preprocessor.normalizedPixelBuffer(from: sampleBuffer) else { return }
         detector.detect(pixelBuffer: pixelBuffer) { [weak self] detections in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.latestDetections = detections
-                self.overlayView.render(detections: detections)
+                
+                // 过滤逻辑：
+                // 1. 必须在扫描区域内（以中心点判断）
+                // 2. 面积必须足够大（过滤远处背景牌），例如占扫描区高度的 1/5 以上
+                
+                let scanFrame = self.scanAreaView.frame
+                let validDetections = detections.filter { detection in
+                    let rect = self.normalizedToViewRect(detection.boundingBox)
+                    let center = CGPoint(x: rect.midX, y: rect.midY)
+                    
+                    // 检查是否在扫描区域内
+                    let inArea = scanFrame.contains(center)
+                    
+                    // 检查大小（简单阈值：高度 > 扫描区高度的 15%）
+                    let sizeCheck = rect.height > (scanFrame.height * 0.15)
+                    
+                    return inArea && sizeCheck
+                }
+                
+                self.latestDetections = validDetections
+                self.overlayView.render(detections: validDetections)
             }
         }
     }
