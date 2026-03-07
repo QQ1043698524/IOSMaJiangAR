@@ -13,14 +13,16 @@ final class MahjongDetector {
     private let processingQueue = DispatchQueue(label: "detector.queue", qos: .userInitiated)
     private var isBusy = false
 
-    init() throws {
+    init?() {
         // Use direct model loading to bypass wrapper class dependency issues
         let bundle = Bundle.main
-        guard let url = bundle.url(forResource: "MahjongYOLOv8n", withExtension: "mlmodelc") else {
-            throw DetectorError.modelNotFound
+        guard let url = bundle.url(forResource: "MahjongYOLOv8n", withExtension: "mlmodelc"),
+              let mlModel = try? MLModel(contentsOf: url),
+              let vnModel = try? VNCoreMLModel(for: mlModel) else {
+            print("Error: Could not load MahjongYOLOv8n model")
+            return nil
         }
-        let mlModel = try MLModel(contentsOf: url)
-        self.model = try VNCoreMLModel(for: mlModel)
+        self.model = vnModel
     }
 
     func detect(

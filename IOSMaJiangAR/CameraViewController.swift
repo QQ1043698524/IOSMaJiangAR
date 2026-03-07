@@ -1,5 +1,7 @@
 import AVFoundation
 import UIKit
+import CoreML
+import Vision
 
 final class CameraViewController: UIViewController {
     private let cameraManager = CameraManager()
@@ -38,10 +40,9 @@ final class CameraViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .black
         
-        do {
-            detector = try MahjongDetector()
-        } catch {
-            print("Failed to init detector: \(error)")
+        detector = MahjongDetector()
+        if detector == nil {
+            print("Failed to init detector")
         }
         
         cameraManager.delegate = self
