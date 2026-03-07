@@ -176,7 +176,7 @@ final class MahjongCalculator {
 
     private func estimateFan(hand: [MahjongTile], flowers: Int, rule: MahjongRule) -> Int {
         var fan = 1
-        let suits = Set(hand.map(\.suit).filter { $0 == .wan || $0 == .tiao || $0 == .tong })
+        let suits = Set(hand.map { $0.suit }.filter { $0 == .wan || $0 == .tiao || $0 == .tong })
         if suits.count == 1 { fan += 3 }
         let honors = hand.filter { $0.suit == .wind || $0.suit == .dragon }.count
         if honors == 0 { fan += 1 }

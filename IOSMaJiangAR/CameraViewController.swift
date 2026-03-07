@@ -144,7 +144,7 @@ final class CameraViewController: UIViewController {
         topBarLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
         handView.onDeleteTile = { [weak self] index in
-            guard let self, self.handTiles.indices.contains(index) else { return }
+            guard let self = self, self.handTiles.indices.contains(index) else { return }
             self.handTiles.remove(at: index)
             self.refreshHandAndResult()
         }
@@ -292,7 +292,7 @@ final class CameraViewController: UIViewController {
             return
         }
         if result.isTing {
-            let names = result.huTiles.map(\.displayName).joined(separator: "/")
+            let names = result.huTiles.map { $0.displayName }.joined(separator: "/")
             resultLabel.text = "听牌：胡\(names)\n\(result.fanDescription)"
         } else {
             resultLabel.text = "未听牌"
@@ -306,7 +306,7 @@ extension CameraViewController: CameraManagerDelegate {
         
         guard let detector = detector else {
             DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
+                guard let self = self else { return }
                 self.topBarLabel.text = "模型加载失败，请替换文件"
                 self.topBar.contentView.backgroundColor = UIColor.red.withAlphaComponent(0.6)
                 
@@ -320,7 +320,7 @@ extension CameraViewController: CameraManagerDelegate {
         guard let pixelBuffer = preprocessor.normalizedPixelBuffer(from: sampleBuffer) else { return }
         detector.detect(pixelBuffer: pixelBuffer) { [weak self] detections in
             DispatchQueue.main.async {
-                guard let self else { return }
+                guard let self = self else { return }
                 
                 // 过滤逻辑：
                 // 1. 必须在扫描区域内（以中心点判断）
