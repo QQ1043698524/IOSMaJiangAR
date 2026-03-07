@@ -27,7 +27,12 @@ final class CameraViewController: UIViewController {
     private var currentRule: MahjongRule = .guobiao
 
     init() {
-        detector = try? MahjongDetector()
+        do {
+            detector = try MahjongDetector()
+        } catch {
+            print("Error loading detector: \(error)")
+            detector = nil
+        }
         super.init(nibName: nil, bundle: nil)
     }
 
