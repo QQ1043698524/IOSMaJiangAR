@@ -19,10 +19,16 @@ jobs:
         run: xcodebuild -resolvePackageDependencies -project IOSMaJiangAR.xcodeproj
 
       - name: Build for generic iOS device
-        run: xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee build.log
 
       - name: Archive unsigned app
-        run: xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -archivePath ${{ github.workspace }}/build/IOSMaJiangAR.xcarchive archive
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild -project IOSMaJiangAR.xcodeproj -scheme IOSMaJiangAR -configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -archivePath ${{ github.workspace }}/build/IOSMaJiangAR.xcarchive archive 2>&1 | tee archive.log
 
       - name: Pack IPA
         run: |
@@ -37,3 +43,12 @@ jobs:
           path: |
             IOSMaJiangAR-unsigned.ipa
             build/IOSMaJiangAR.xcarchive
+
+      - name: Upload xcodebuild logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-logs
+          path: |
+            build.log
+            archive.log
