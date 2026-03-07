@@ -48,7 +48,7 @@ final class MahjongDetector {
                 completion(detections)
             }
             request.imageCropAndScaleOption = .scaleFill
-            let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .right, options: [:])
+            let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])
             do {
                 try handler.perform([request])
             } catch {

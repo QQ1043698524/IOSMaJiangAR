@@ -55,7 +55,7 @@ final class CameraManager: NSObject {
             throw CameraError.cannotAddOutput
         }
         session.addOutput(output)
-        output.connection(with: .video)?.videoOrientation = .portrait
+        output.connection(with: .video)?.videoOrientation = .landscapeRight
         session.commitConfiguration()
     }
 

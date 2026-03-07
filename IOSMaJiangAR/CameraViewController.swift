@@ -9,7 +9,8 @@ final class CameraViewController: UIViewController {
 
     private let overlayView = BoundingBoxRenderer()
     private let scanAreaView = UIView()
-    private let topBar = UILabel()
+    private let topBar = UIVisualEffectView(effect: UIBlurEffect(style: .systemThinMaterialDark))
+    private let topBarLabel = UILabel()
     private let resultLabel = ResultLabel()
     private let handView = MahjongHandView()
     private let actionStack = UIStackView()
@@ -75,6 +76,32 @@ final class CameraViewController: UIViewController {
         scanAreaView.isUserInteractionEnabled = false
         view.addSubview(scanAreaView)
         
+        // 添加渐变边框层
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.frame = CGRect(origin: .zero, size: CGSize(width: view.bounds.width - 32, height: view.bounds.height * 0.3))
+        gradientLayer.colors = [UIColor.green.cgColor, UIColor.cyan.cgColor, UIColor.green.cgColor]
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
+        
+        // 使用 ShapeLayer 作为 Mask 实现仅显示边框
+        let shapeLayer = CAShapeLayer()
+        shapeLayer.lineWidth = 3
+        shapeLayer.path = UIBezierPath(roundedRect: gradientLayer.bounds, cornerRadius: 8).cgPath
+        shapeLayer.fillColor = nil
+        shapeLayer.strokeColor = UIColor.black.cgColor
+        gradientLayer.mask = shapeLayer
+        
+        scanAreaView.layer.addSublayer(gradientLayer)
+        
+        // 渐变动画
+        let animation = CABasicAnimation(keyPath: "colors")
+        animation.fromValue = [UIColor.green.cgColor, UIColor.cyan.cgColor, UIColor.green.cgColor]
+        animation.toValue = [UIColor.cyan.cgColor, UIColor.green.cgColor, UIColor.cyan.cgColor]
+        animation.duration = 3.0
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        gradientLayer.add(animation, forKey: "gradientAnimation")
+
         let scanLabel = UILabel()
         scanLabel.text = "请将手牌置于此区域内"
         scanLabel.textColor = .green
@@ -86,6 +113,11 @@ final class CameraViewController: UIViewController {
             scanLabel.centerXAnchor.constraint(equalTo: scanAreaView.centerXAnchor),
             scanLabel.topAnchor.constraint(equalTo: scanAreaView.topAnchor, constant: 8)
         ])
+        
+        // 呼吸动画 (透明度)
+        UIView.animate(withDuration: 1.5, delay: 0, options: [.autoreverse, .repeat, .allowUserInteraction], animations: {
+            scanAreaView.alpha = 0.6
+        }, completion: nil)
 
         overlayView.backgroundColor = .clear
         overlayView.isUserInteractionEnabled = true
@@ -93,13 +125,16 @@ final class CameraViewController: UIViewController {
         overlayView.addGestureRecognizer(tap)
         view.addSubview(overlayView)
 
-        topBar.text = "麻将实时识别"
-        topBar.textColor = .white
-        topBar.font = .systemFont(ofSize: 17, weight: .semibold)
-        topBar.textAlignment = .center
-        topBar.backgroundColor = UIColor.black.withAlphaComponent(0.35)
-        topBar.layer.cornerRadius = 10
+        topBarLabel.text = "麻将实时识别"
+        topBarLabel.textColor = .white
+        topBarLabel.font = .systemFont(ofSize: 17, weight: .semibold)
+        topBarLabel.textAlignment = .center
+        
+        topBar.layer.cornerRadius = 12
         topBar.clipsToBounds = true
+        topBar.contentView.addSubview(topBarLabel)
+        topBarLabel.frame = topBar.bounds
+        topBarLabel.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
         handView.onDeleteTile = { [weak self] index in
             guard let self, self.handTiles.indices.contains(index) else { return }
@@ -120,24 +155,25 @@ final class CameraViewController: UIViewController {
 
         [topBar, resultLabel, handView, actionStack].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
 
+        // 横屏布局：手牌在底部，按钮在右侧，结果在左上，TopBar在顶中
         NSLayoutConstraint.activate([
             topBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            topBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            topBar.trailingAnchor.constraint(equalTo: actionStack.leadingAnchor, constant: -12),
-            topBar.heightAnchor.constraint(equalToConstant: 40),
+            topBar.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            topBar.widthAnchor.constraint(equalToConstant: 200),
+            topBar.heightAnchor.constraint(equalToConstant: 36),
 
-            resultLabel.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 10),
-            resultLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            resultLabel.trailingAnchor.constraint(equalTo: actionStack.leadingAnchor, constant: -12),
+            resultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            resultLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            resultLabel.widthAnchor.constraint(equalToConstant: 240),
             resultLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 66),
 
-            actionStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+            actionStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             actionStack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            actionStack.widthAnchor.constraint(equalToConstant: 96),
+            actionStack.widthAnchor.constraint(equalToConstant: 80),
 
-            handView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            handView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            handView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            handView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            handView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
+            handView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7),
             handView.heightAnchor.constraint(equalToConstant: 72)
         ])
         refreshHandAndResult()
@@ -184,12 +220,12 @@ final class CameraViewController: UIViewController {
             try cameraManager.configureSession(preferredHD: true)
             cameraManager.start()
         } catch {
-            topBar.text = "相机启动失败"
+            topBarLabel.text = "相机启动失败"
         }
     }
 
     private func showPermissionDenied() {
-        topBar.text = "请在系统设置开启相机权限"
+        topBarLabel.text = "请在系统设置开启相机权限"
     }
 
     @objc private func clearHand() {
@@ -263,8 +299,13 @@ extension CameraViewController: CameraManagerDelegate {
         
         guard let detector = detector else {
             DispatchQueue.main.async { [weak self] in
-                self?.topBar.text = "模型加载失败，请替换文件"
-                self?.topBar.backgroundColor = UIColor.red.withAlphaComponent(0.6)
+                guard let self else { return }
+                self.topBarLabel.text = "模型加载失败，请替换文件"
+                self.topBar.contentView.backgroundColor = UIColor.red.withAlphaComponent(0.6)
+                
+                // 震动反馈
+                let feedback = UINotificationFeedbackGenerator()
+                feedback.notificationOccurred(.error)
             }
             return
         }
