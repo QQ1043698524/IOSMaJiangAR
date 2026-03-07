@@ -275,6 +275,8 @@ final class CameraViewController: UIViewController {
         appendDebugLog("自动识别模式: \(isAutoAddEnabled ? "开启" : "关闭")")
     }
 
+    private var lastLogTimestamp: TimeInterval = 0
+
     private func appendDebugLog(_ text: String) {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
@@ -290,6 +292,9 @@ final class CameraViewController: UIViewController {
             // 滚动到底部
             let range = NSMakeRange(self.debugLogView.text.count - 1, 1)
             self.debugLogView.scrollRangeToVisible(range)
+            
+            // 确保 debugLogView 在最上层
+            self.view.bringSubviewToFront(self.debugLogView)
         }
     }
 
@@ -449,6 +454,24 @@ extension CameraViewController: CameraManagerDelegate {
                 
                 self.latestDetections = validDetections
                 self.overlayView.render(detections: validDetections)
+                
+                // 实时调试日志：每秒打印一次当前识别到的物体
+                let now = Date().timeIntervalSince1970
+                if now - self.lastLogTimestamp > 1.0 {
+                    self.lastLogTimestamp = now
+                    if validDetections.isEmpty {
+                        // self.appendDebugLog("未检测到物体")
+                    } else {
+                        // 统计各类物体数量
+                        var counts: [String: Int] = [:]
+                        for d in validDetections {
+                            let label = d.tile?.displayName ?? d.label
+                            counts[label, default: 0] += 1
+                        }
+                        let logText = counts.map { "\($0.key)x\($0.value)" }.joined(separator: ", ")
+                        self.appendDebugLog("识别: \(logText)")
+                    }
+                }
                 
                 // 自动添加逻辑
                 if self.isAutoAddEnabled {
