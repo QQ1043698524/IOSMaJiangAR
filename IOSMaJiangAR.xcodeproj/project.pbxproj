@@ -18,7 +18,7 @@
 		4B4D00010000000100000009 /* ResultLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D00010000000000000009 /* ResultLabel.swift */; };
 		4B4D0001000000010000000A /* ImagePreprocessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000A /* ImagePreprocessor.swift */; };
 		4B4D0001000000010000000B /* BoundingBoxRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000B /* BoundingBoxRenderer.swift */; };
-		4B4D0001000000010000000C /* MahjongYOLOv8n.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000E /* MahjongYOLOv8n.mlmodelc */; };
+		4B4D0001000000010000000C /* MahjongYOLOv8n.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 4B4D0001000000000000000E /* MahjongYOLOv8n.mlmodel */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,7 +35,7 @@
 		4B4D0001000000000000000B /* BoundingBoxRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundingBoxRenderer.swift; sourceTree = "<group>"; };
 		4B4D0001000000000000000C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B4D0001000000000000000D /* IOSMaJiangAR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = IOSMaJiangAR.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		4B4D0001000000000000000E /* MahjongYOLOv8n.mlmodelc */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlmodelc; path = MahjongYOLOv8n.mlmodelc; sourceTree = "<group>"; };
+		4B4D0001000000000000000E /* MahjongYOLOv8n.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = MahjongYOLOv8n.mlmodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,7 +72,7 @@
 				4B4D0001000000000000000A /* ImagePreprocessor.swift */,
 				4B4D0001000000000000000B /* BoundingBoxRenderer.swift */,
 				4B4D0001000000000000000C /* Info.plist */,
-				4B4D0001000000000000000E /* MahjongYOLOv8n.mlmodelc */,
+				4B4D0001000000000000000E /* MahjongYOLOv8n.mlmodel */,
 			);
 			path = IOSMaJiangAR;
 			sourceTree = "<group>";
@@ -142,7 +142,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4B4D0001000000010000000C /* MahjongYOLOv8n.mlmodelc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +163,7 @@
 				4B4D00010000000100000009 /* ResultLabel.swift in Sources */,
 				4B4D0001000000010000000A /* ImagePreprocessor.swift in Sources */,
 				4B4D0001000000010000000B /* BoundingBoxRenderer.swift in Sources */,
+				4B4D0001000000010000000C /* MahjongYOLOv8n.mlmodel in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

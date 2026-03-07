@@ -10,9 +10,60 @@
 
 ### 如何获取模型文件
 
-我们在 `ModelTraining` 目录下提供了一个 Python 脚本，您可以使用它来训练自己的模型或从公开数据集导出。
+由于您本地可能没有 Python 环境，且 Roboflow 下载可能受限，我们推荐使用 **Google Colab** 云端生成模型。
 
-**推荐步骤（使用 Google Colab）：**
+**⚡️ 方案一：生成通用测试模型 (无需任何配置，最快)**
+
+此模型**无法识别麻将**（只能识别猫狗、人等），但能让 App **正常启动不闪退**，方便您测试 UI 和横屏效果。
+
+1.  打开 [Google Colab](https://colab.research.google.com/)。
+2.  新建笔记本，复制以下代码并运行：
+    ```python
+    !pip install ultralytics
+    from ultralytics import YOLO
+    import shutil
+    import os
+    
+    # 下载通用模型并转换
+    model = YOLO('yolov8n.pt') 
+    model.export(format='coreml', nms=True)
+    
+    # 重命名并打包
+    if os.path.exists('MahjongYOLOv8n.mlmodelc'):
+        shutil.rmtree('MahjongYOLOv8n.mlmodelc')
+    shutil.move('yolov8n.mlmodelc', 'MahjongYOLOv8n.mlmodelc')
+    shutil.make_archive('MahjongYOLOv8n', 'zip', 'MahjongYOLOv8n.mlmodelc')
+    ```
+3.  下载生成的 `MahjongYOLOv8n.zip`，解压替换项目中的文件夹。
+
+**🔥 方案二：在线训练真实麻将模型 (推荐)**
+
+如果您需要**真实的麻将识别能力**，可以使用我们提供的专用训练脚本。
+
+1.  在项目目录 `ModelTraining/` 下找到 `train_mahjong_colab.py` 文件。
+2.  打开 [Google Colab](https://colab.research.google.com/)。
+3.  将 `train_mahjong_colab.py` 的内容**全部复制粘贴**到 Colab 中。
+4.  **关键步骤**：去 [Roboflow 注册](https://app.roboflow.com/) 一个免费账号，获取 API Key，替换脚本中的 `YOUR_ROBOFLOW_API_KEY`。
+5.  点击运行。脚本会自动下载麻将数据集、训练模型并导出为 Core ML 格式。
+6.  下载生成的 zip 文件。
+7.  **重要**：解压后得到的是 `MahjongYOLOv8n.mlpackage`。
+8.  请将其拖入您的 Xcode 项目中（Xcode 会自动编译它），**或者**在 Mac 终端运行以下命令手动编译：
+    ```bash
+    xcrun coremlcompiler compile MahjongYOLOv8n.mlpackage .
+    ```
+    然后将生成的 `MahjongYOLOv8n.mlmodelc` 文件夹替换项目中的同名文件夹。
+
+**💡 提示：如果训练已完成但导出报错**
+
+如果您已经在 Colab 中跑完了训练（耗时 30 分钟），但最后一步导出报错了，**不需要重新训练**！
+
+1.  请复制 `ModelTraining/export_only.py` 的内容。
+2.  粘贴到 Colab 的新代码框中运行。
+3.  它会直接利用您刚才训练好的权重文件进行重新导出。
+
+## 功能特性
+
+## 功能特性
 
 1.  将 `ModelTraining` 文件夹上传到 Google Colab 或您的本地 GPU 环境。
 2.  安装依赖：`pip install -r requirements.txt`
