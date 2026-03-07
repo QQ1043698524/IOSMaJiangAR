@@ -16,17 +16,22 @@ final class CameraViewController: UIViewController {
     private let resultLabel = ResultLabel()
     private let handView = MahjongHandView()
     private let actionStack = UIStackView()
+    private let debugLogView = UITextView()
 
     private let clearButton = UIButton(type: .system)
     private let ruleButton = UIButton(type: .system)
     private let recognizeButton = UIButton(type: .system)
     private let torchButton = UIButton(type: .system)
     private let addButton = UIButton(type: .system)
+    private let autoAddSwitch = UISwitch()
+    private let autoAddLabel = UILabel()
 
     private var handTiles: [MahjongTile] = []
     private var latestDetections: [MahjongDetection] = []
     private var isRecognitionEnabled = true
     private var isTorchEnabled = false
+    private var isAutoAddEnabled = false
+    private var lastAutoAddTimestamp: TimeInterval = 0
     private var currentRule: MahjongRule = .guobiao
 
     init() {
@@ -146,6 +151,15 @@ final class CameraViewController: UIViewController {
         overlayView.addGestureRecognizer(tap)
         view.addSubview(overlayView)
 
+        // Debug Log View
+        debugLogView.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        debugLogView.textColor = .green
+        debugLogView.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
+        debugLogView.isEditable = false
+        debugLogView.isUserInteractionEnabled = false
+        debugLogView.text = "初始化完成...\n等待识别..."
+        view.addSubview(debugLogView)
+
         topBarLabel.text = "麻将实时识别"
         topBarLabel.textColor = .white
         topBarLabel.font = .systemFont(ofSize: 14, weight: .semibold)
@@ -164,20 +178,33 @@ final class CameraViewController: UIViewController {
         }
 
         configureActionButtons()
+        
+        // Auto Add Switch
+        let autoAddStack = UIStackView()
+        autoAddStack.axis = .horizontal
+        autoAddStack.spacing = 4
+        autoAddStack.alignment = .center
+        autoAddLabel.text = "自动"
+        autoAddLabel.textColor = .white
+        autoAddLabel.font = .systemFont(ofSize: 12)
+        autoAddSwitch.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
+        autoAddSwitch.addTarget(self, action: #selector(toggleAutoAdd), for: .valueChanged)
+        autoAddStack.addArrangedSubview(autoAddLabel)
+        autoAddStack.addArrangedSubview(autoAddSwitch)
+
         actionStack.axis = .vertical
         actionStack.spacing = 8
         actionStack.alignment = .fill
-        // 注意：这里移除了 viewDidLoad 中的重复添加，因为 addButton 已经在 configureActionButtons 后统一添加
-        // 但由于 SearchReplace 上一步操作可能导致结构错乱，这里重新整理整个 setupUI 尾部
         
         [clearButton, ruleButton, recognizeButton, torchButton, addButton].forEach { actionStack.addArrangedSubview($0) }
+        actionStack.addArrangedSubview(autoAddStack)
 
         view.addSubview(topBar)
         view.addSubview(resultLabel)
         view.addSubview(handView)
         view.addSubview(actionStack)
 
-        [topBar, resultLabel, handView, actionStack].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
+        [topBar, resultLabel, handView, actionStack, debugLogView].forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
 
         // 横屏布局：手牌在底部，按钮在右侧，结果在左上，TopBar在顶中
         NSLayoutConstraint.activate([
@@ -190,6 +217,11 @@ final class CameraViewController: UIViewController {
             resultLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 8),
             resultLabel.widthAnchor.constraint(equalToConstant: 160),
             resultLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 40),
+
+            debugLogView.topAnchor.constraint(equalTo: resultLabel.bottomAnchor, constant: 8),
+            debugLogView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 8),
+            debugLogView.widthAnchor.constraint(equalToConstant: 160),
+            debugLogView.bottomAnchor.constraint(equalTo: handView.topAnchor, constant: -8),
 
             actionStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -8),
             actionStack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -236,6 +268,29 @@ final class CameraViewController: UIViewController {
         
         let feedback = UINotificationFeedbackGenerator()
         feedback.notificationOccurred(.success)
+    }
+
+    @objc private func toggleAutoAdd() {
+        isAutoAddEnabled = autoAddSwitch.isOn
+        appendDebugLog("自动识别模式: \(isAutoAddEnabled ? "开启" : "关闭")")
+    }
+
+    private func appendDebugLog(_ text: String) {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        let timestamp = formatter.string(from: Date())
+        let log = "[\(timestamp)] \(text)\n"
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.debugLogView.text.append(log)
+            if self.debugLogView.text.count > 1000 {
+                self.debugLogView.text = String(self.debugLogView.text.suffix(1000))
+            }
+            // 滚动到底部
+            let range = NSMakeRange(self.debugLogView.text.count - 1, 1)
+            self.debugLogView.scrollRangeToVisible(range)
+        }
     }
 
     private func configure(button: UIButton, title: String, action: Selector) {
@@ -394,6 +449,38 @@ extension CameraViewController: CameraManagerDelegate {
                 
                 self.latestDetections = validDetections
                 self.overlayView.render(detections: validDetections)
+                
+                // 自动添加逻辑
+                if self.isAutoAddEnabled {
+                    let now = Date().timeIntervalSince1970
+                    // 防抖：每 2 秒尝试添加一次
+                    if now - self.lastAutoAddTimestamp > 2.0 {
+                        // 过滤出置信度较高的（>85%）且是有效麻将牌
+                        let highConfidenceTiles = validDetections.compactMap { detection -> MahjongTile? in
+                            if detection.confidence > 0.85 {
+                                return detection.tile
+                            }
+                            return nil
+                        }
+                        
+                        if !highConfidenceTiles.isEmpty {
+                            var addedCount = 0
+                            for tile in highConfidenceTiles {
+                                if self.handTiles.count >= 14 { break }
+                                self.handTiles.append(tile)
+                                addedCount += 1
+                            }
+                            if addedCount > 0 {
+                                self.lastAutoAddTimestamp = now
+                                self.refreshHandAndResult()
+                                let names = highConfidenceTiles.prefix(addedCount).map { $0.displayName }.joined(separator: ",")
+                                self.appendDebugLog("自动添加: \(names)")
+                                let feedback = UINotificationFeedbackGenerator()
+                                feedback.notificationOccurred(.success)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
