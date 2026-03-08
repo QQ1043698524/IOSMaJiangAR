@@ -60,7 +60,7 @@ final class MahjongDetector {
             let request = VNCoreMLRequest(model: self.model) { request, _ in
                 defer { self.isBusy = false }
                 let observations = request.results as? [VNRecognizedObjectObservation] ?? []
-                let detections = observations.compactMap { observation -> MahjongDetection? in
+                var detections = observations.compactMap { observation -> MahjongDetection? in
                     guard let top = observation.labels.first else { return nil }
                     let tile = MahjongTile.modelLookup[top.identifier]
                     return MahjongDetection(
@@ -70,6 +70,11 @@ final class MahjongDetector {
                         boundingBox: observation.boundingBox
                     )
                 }
+                
+                // 按 X 坐标排序（从左到右）
+                // boundingBox 是归一化的，origin.x 即左边缘
+                detections.sort { $0.boundingBox.minX < $1.boundingBox.minX }
+                
                 completion(detections)
             }
             request.imageCropAndScaleOption = .scaleFill

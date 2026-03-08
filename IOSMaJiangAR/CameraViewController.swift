@@ -178,27 +178,14 @@ final class CameraViewController: UIViewController {
         }
 
         configureActionButtons()
-        
-        // Auto Add Switch
-        let autoAddStack = UIStackView()
-        autoAddStack.axis = .horizontal
-        autoAddStack.spacing = 4
-        autoAddStack.alignment = .center
-        autoAddLabel.text = "自动"
-        autoAddLabel.textColor = .white
-        autoAddLabel.font = .systemFont(ofSize: 12)
-        autoAddSwitch.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
-        autoAddSwitch.addTarget(self, action: #selector(toggleAutoAdd), for: .valueChanged)
-        autoAddStack.addArrangedSubview(autoAddLabel)
-        autoAddStack.addArrangedSubview(autoAddSwitch)
 
+        // Simplified action stack
         actionStack.axis = .vertical
         actionStack.spacing = 8
         actionStack.alignment = .fill
         
-        [clearButton, ruleButton, recognizeButton, torchButton, addButton].forEach { actionStack.addArrangedSubview($0) }
-        actionStack.addArrangedSubview(autoAddStack)
-
+        [ruleButton, recognizeButton, torchButton].forEach { actionStack.addArrangedSubview($0) }
+        
         view.addSubview(topBar)
         view.addSubview(resultLabel)
         view.addSubview(handView)
@@ -270,32 +257,75 @@ final class CameraViewController: UIViewController {
         feedback.notificationOccurred(.success)
     }
 
+    private var detectionHistory: [[MahjongTile]] = []
+    private let historyCapacity = 5 // 稳定窗口大小
+
     @objc private func toggleAutoAdd() {
-        isAutoAddEnabled = autoAddSwitch.isOn
-        appendDebugLog("自动识别模式: \(isAutoAddEnabled ? "开启" : "关闭")")
+        // 废弃旧的自动添加逻辑，现在总是实时识别
     }
+    
+    // ... (remove appendDebugLog)
 
-    private var lastLogTimestamp: TimeInterval = 0
-
-    private func appendDebugLog(_ text: String) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let timestamp = formatter.string(from: Date())
-        let log = "[\(timestamp)] \(text)\n"
+    // ... (keep configureActionButtons but remove autoAddSwitch/autoAddLabel/addButton related code)
+    
+    // Replace detection handling
+    func cameraManager(_ manager: CameraManager, didOutput sampleBuffer: CMSampleBuffer) {
+        guard isRecognitionEnabled else { return }
         
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.debugLogView.text.append(log)
-            if self.debugLogView.text.count > 1000 {
-                self.debugLogView.text = String(self.debugLogView.text.suffix(1000))
+        guard let detector = detector else { return }
+        guard let pixelBuffer = preprocessor.normalizedPixelBuffer(from: sampleBuffer) else { return }
+        
+        detector.detect(pixelBuffer: pixelBuffer) { [weak self] detections in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                
+                self.latestDetections = detections
+                self.overlayView.render(detections: detections)
+                
+                // 1. 提取当前帧所有识别到的麻将牌（已按X坐标排序）
+                let currentFrameTiles = detections.compactMap { $0.tile }
+                
+                // 2. 如果识别数量太少（比如少于4张），可能是不完整的帧，忽略
+                if currentFrameTiles.count < 4 { return }
+                
+                // 3. 加入历史记录
+                self.detectionHistory.append(currentFrameTiles)
+                if self.detectionHistory.count > self.historyCapacity {
+                    self.detectionHistory.removeFirst()
+                }
+                
+                // 4. 寻找最稳定的结果（众数算法简化版）
+                // 如果连续 N 帧识别出的手牌序列完全一致，或者大部分一致，则更新手牌
+                if self.detectionHistory.count == self.historyCapacity {
+                    if let stableHand = self.findStableHand(in: self.detectionHistory) {
+                        self.handTiles = stableHand
+                        self.refreshHandAndResult()
+                    }
+                }
             }
-            // 滚动到底部
-            let range = NSMakeRange(self.debugLogView.text.count - 1, 1)
-            self.debugLogView.scrollRangeToVisible(range)
-            
-            // 确保 debugLogView 在最上层
-            self.view.bringSubviewToFront(self.debugLogView)
         }
+    }
+    
+    private func findStableHand(in history: [[MahjongTile]]) -> [MahjongTile]? {
+        // 简单策略：如果最近 5 帧里有 3 帧的结果完全一样，就认为是稳定的
+        // 将数组转换为字符串作为 Key 进行统计
+        var counts: [String: Int] = [:]
+        var mapping: [String: [MahjongTile]] = [:]
+        
+        for hand in history {
+            let key = hand.map { $0.modelLabel }.joined(separator: ",")
+            counts[key, default: 0] += 1
+            mapping[key] = hand
+        }
+        
+        // 找到出现次数最多的
+        if let maxEntry = counts.max(by: { $0.value < $1.value }) {
+            // 阈值：5帧里至少3帧一致
+            if maxEntry.value >= 3 {
+                return mapping[maxEntry.key]
+            }
+        }
+        return nil
     }
 
     private func configure(button: UIButton, title: String, action: Selector) {
@@ -406,105 +436,6 @@ final class CameraViewController: UIViewController {
 }
 
 extension CameraViewController: CameraManagerDelegate {
-    func cameraManager(_ manager: CameraManager, didOutput sampleBuffer: CMSampleBuffer) {
-        guard isRecognitionEnabled else { return }
-        
-        guard let detector = detector else {
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                self.topBarLabel.text = "模型加载失败，请替换文件"
-                self.topBar.contentView.backgroundColor = UIColor.red.withAlphaComponent(0.6)
-                
-                // 震动反馈
-                let feedback = UINotificationFeedbackGenerator()
-                feedback.notificationOccurred(.error)
-            }
-            return
-        }
-        
-        guard let pixelBuffer = preprocessor.normalizedPixelBuffer(from: sampleBuffer) else { return }
-        detector.detect(pixelBuffer: pixelBuffer) { [weak self] detections in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                
-                // 过滤逻辑：
-                // 1. 必须在扫描区域内（以中心点判断）
-                // 2. 面积必须足够大（过滤远处背景牌），例如占扫描区高度的 1/5 以上
-                
-                let scanFrame = self.scanAreaView.frame
-                
-                // 调试模式：显示所有识别结果，不过滤
-                let validDetections = detections
-                
-                // 如果需要恢复过滤，请取消下面注释并修改为:
-                /*
-                let validDetections = detections.filter { detection in
-                    let rect = self.normalizedToViewRect(detection.boundingBox)
-                    let center = CGPoint(x: rect.midX, y: rect.midY)
-                    
-                    // 检查是否在扫描区域内
-                    let inArea = scanFrame.contains(center)
-                    
-                    // 检查大小（简单阈值：高度 > 扫描区高度的 10%）
-                    let sizeCheck = rect.height > (scanFrame.height * 0.10)
-                    
-                    return inArea && sizeCheck
-                }
-                */
-                
-                self.latestDetections = validDetections
-                self.overlayView.render(detections: validDetections)
-                
-                // 实时调试日志：每秒打印一次当前识别到的物体
-                let now = Date().timeIntervalSince1970
-                if now - self.lastLogTimestamp > 1.0 {
-                    self.lastLogTimestamp = now
-                    if validDetections.isEmpty {
-                        // self.appendDebugLog("未检测到物体")
-                    } else {
-                        // 统计各类物体数量
-                        var counts: [String: Int] = [:]
-                        for d in validDetections {
-                            let label = d.tile?.displayName ?? d.label
-                            counts[label, default: 0] += 1
-                        }
-                        let logText = counts.map { "\($0.key)x\($0.value)" }.joined(separator: ", ")
-                        self.appendDebugLog("识别: \(logText)")
-                    }
-                }
-                
-                // 自动添加逻辑
-                if self.isAutoAddEnabled {
-                    let now = Date().timeIntervalSince1970
-                    // 防抖：每 2 秒尝试添加一次
-                    if now - self.lastAutoAddTimestamp > 2.0 {
-                        // 过滤出置信度较高的（>85%）且是有效麻将牌
-                        let highConfidenceTiles = validDetections.compactMap { detection -> MahjongTile? in
-                            if detection.confidence > 0.85 {
-                                return detection.tile
-                            }
-                            return nil
-                        }
-                        
-                        if !highConfidenceTiles.isEmpty {
-                            var addedCount = 0
-                            for tile in highConfidenceTiles {
-                                if self.handTiles.count >= 14 { break }
-                                self.handTiles.append(tile)
-                                addedCount += 1
-                            }
-                            if addedCount > 0 {
-                                self.lastAutoAddTimestamp = now
-                                self.refreshHandAndResult()
-                                let names = highConfidenceTiles.prefix(addedCount).map { $0.displayName }.joined(separator: ",")
-                                self.appendDebugLog("自动添加: \(names)")
-                                let feedback = UINotificationFeedbackGenerator()
-                                feedback.notificationOccurred(.success)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // cameraManager method was implemented directly in class body above, removing this extension block or merging it
+    // To keep it clean, let's remove the redundant extension block at the bottom
 }
