@@ -282,11 +282,16 @@ final class CameraViewController: UIViewController {
                 self.latestDetections = detections
                 self.overlayView.render(detections: detections)
                 
+                // Debug logging (throttled)
+                if !detections.isEmpty {
+                    // print("Debug: \(detections.count) detections") 
+                }
+                
                 // 1. 提取当前帧所有识别到的麻将牌（已按X坐标排序）
                 let currentFrameTiles = detections.compactMap { $0.tile }
                 
                 // 2. 如果识别数量太少（比如少于4张），可能是不完整的帧，忽略
-                if currentFrameTiles.count < 4 { return }
+                // if currentFrameTiles.count < 4 { return } // 暂时移除此限制以允许识别单张测试
                 
                 // 3. 加入历史记录
                 self.detectionHistory.append(currentFrameTiles)
@@ -296,7 +301,7 @@ final class CameraViewController: UIViewController {
                 
                 // 4. 寻找最稳定的结果（众数算法简化版）
                 // 如果连续 N 帧识别出的手牌序列完全一致，或者大部分一致，则更新手牌
-                if self.detectionHistory.count == self.historyCapacity {
+                if self.detectionHistory.count >= 3 { // 降低门槛，至少3帧
                     if let stableHand = self.findStableHand(in: self.detectionHistory) {
                         self.handTiles = stableHand
                         self.refreshHandAndResult()
@@ -307,12 +312,15 @@ final class CameraViewController: UIViewController {
     }
     
     private func findStableHand(in history: [[MahjongTile]]) -> [MahjongTile]? {
-        // 简单策略：如果最近 5 帧里有 3 帧的结果完全一样，就认为是稳定的
+        // 简单策略：如果最近 N 帧里有 M 帧的结果完全一样，就认为是稳定的
         // 将数组转换为字符串作为 Key 进行统计
         var counts: [String: Int] = [:]
         var mapping: [String: [MahjongTile]] = [:]
         
         for hand in history {
+            // 如果历史记录中有空手牌，跳过
+            if hand.isEmpty { continue }
+            
             let key = hand.map { $0.modelLabel }.joined(separator: ",")
             counts[key, default: 0] += 1
             mapping[key] = hand
@@ -320,8 +328,8 @@ final class CameraViewController: UIViewController {
         
         // 找到出现次数最多的
         if let maxEntry = counts.max(by: { $0.value < $1.value }) {
-            // 阈值：5帧里至少3帧一致
-            if maxEntry.value >= 3 {
+            // 阈值：至少 2 帧一致 (在较小的历史窗口中)
+            if maxEntry.value >= 2 {
                 return mapping[maxEntry.key]
             }
         }
